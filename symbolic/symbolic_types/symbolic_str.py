@@ -2,6 +2,7 @@ from . symbolic_type import SymbolicObject
 from symbolic.symbolic_types.symbolic_int import SymbolicInteger
 from string import whitespace
 
+
 class SymbolicStr(SymbolicObject, str):
 
     def __new__(cls, name, v, expr=None):
@@ -28,11 +29,11 @@ class SymbolicStr(SymbolicObject, str):
 
     def __len__(self):
         return self._do_sexpr([self], lambda x: len(x),
-                                "str.len", SymbolicInteger.wrap)
+                              "str.len", SymbolicInteger.wrap)
 
     def __contains__(self, item):
         return self._do_sexpr([self, item], lambda x, y: str.__contains__(x, y),
-                                "in", SymbolicInteger.wrap)
+                              "in", SymbolicInteger.wrap)
 
     def __getitem__(self, key):
         """Negative indexes, out of bound slices, and slice skips are not currently supported."""
@@ -65,7 +66,7 @@ class SymbolicStr(SymbolicObject, str):
             sep_idx = self.find(sep)
             maxsplit = None if maxsplit is None else maxsplit - 1
             return [self[0:sep_idx]] + \
-                   self[sep_idx + 1:].split(sep, maxsplit)
+                self[sep_idx + 1:].split(sep, maxsplit)
 
     def count(self, sub):
         """String count is not a native function of the SMT solver. Instead, we implement count as a recursive series of
@@ -98,7 +99,8 @@ class SymbolicStr(SymbolicObject, str):
             first_half = first_half._replace(old, new)
             second_half = self[pivot_point:]
             ret = first_half + second_half.replace(old, new, maxreplace-1)
-        assert str(ret) == str.replace(str(self), str(old), str(new), int(maxreplace))
+        assert str(ret) == str.replace(
+            str(self), str(old), str(new), int(maxreplace))
         return ret
 
     def strip(self, chars=None):
@@ -114,19 +116,22 @@ class SymbolicStr(SymbolicObject, str):
                 return self[:self.__len__() - 1].strip(chars)
         return self
 
+
 # Currently only a subset of string operations are supported.
 ops = [("add", "+")]
 
-def make_method(method,op,a):
-    code  = "def %s(self,other):\n" % method
-    code += "   return self._op_worker(%s,lambda x,y : x %s y, \"%s\")" % (a,op,op)
+
+def make_method(method, op, a):
+    code = "def %s(self,other):\n" % method
+    code += "   return self._op_worker(%s,lambda x,y : x %s y, \"%s\")" % (
+        a, op, op)
     locals_dict = {}
     exec(code, globals(), locals_dict)
     setattr(SymbolicStr, method, locals_dict[method])
 
-for (name,op) in ops:
-    method  = "__%s__" % name
-    make_method(method,op,"[self,other]")
-    rmethod  = "__r%s__" % name
-    make_method(rmethod,op,"[other,self]")
 
+for (name, op) in ops:
+    method = "__%s__" % name
+    make_method(method, op, "[self,other]")
+    rmethod = "__r%s__" % name
+    make_method(rmethod, op, "[other,self]")

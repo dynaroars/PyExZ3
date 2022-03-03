@@ -3,14 +3,21 @@
 import inspect
 from collections import Counter
 import sys
-from .invocation import FunctionInvocation
+from .explore import FunctionInvocation
 from .symbolic_types import SymbolicInteger, getSymbolic
+import pdb
+
+import settings
+import helpers.vcommon as CM
+mlog = CM.getLogger(__name__, settings.LOGGER_LEVEL)
+
+
+DBG = pdb.set_trace
 
 # The built-in definition of len wraps the return value in an int() constructor, destroying any symbolic types.
 # By redefining len here we can preserve symbolic integer types.
 import builtins
 builtins.len = (lambda x: x.__len__())
-
 
 class Loader:
     def __init__(self, filename, entry):
@@ -20,55 +27,61 @@ class Loader:
         self._filename = filename.stem
         self._entrypoint = self._filename if entry == "" else entry
         self._resetCallback(True)
-    
+
     @property
     def filename(self):
         return self._filename
-    
+
     @property
     def entry(self):
         return self._entrypoint
 
     def createInvocation(self):
-        inv = FunctionInvocation(self._execute, self._resetCallback)
         func = self.app.__dict__[self._entrypoint]
         argspec = inspect.getargspec(func)
+
+        inv = FunctionInvocation(self._execute, self._resetCallback)
         # check to see if user specified initial values of arguments
         if "concrete_args" in func.__dict__:
+            print("concrete args")
             for (f, v) in func.concrete_args.items():
                 if f not in argspec.args:
-                    print(f"Error in @concrete: {self._entrypoint} has no argument named {f}")
+                    print(f"Error in @concrete: {self._entrypoint} has no argument {f}")
                     raise ImportError()
                 else:
-                    Loader._initializeArgumentConcrete(inv, f, v)
+                    self._initArgConcrete(inv, f, v)
 
         if "symbolic_args" in func.__dict__:
+            print("symbolic args")
             for (f, v) in func.symbolic_args.items():
                 if f not in argspec.args:
                     print("Error (@symbolic): " + self._entrypoint +
                           " has no argument named " + f)
                     raise ImportError()
-                elif f in inv.getNames():
-                    print("Argument " + f +
-                          " defined in both @concrete and @symbolic")
+                elif f in inv.names:
+                    print(f"Argument {f} defined in both @concrete and @symbolic")
                     raise ImportError()
                 else:
                     s = getSymbolic(v)
-                    if (s == None):
+                    if (s is None):
                         print("Error at argument " + f + " of entry point " + self._entrypoint +
                               " : no corresponding symbolic type found for type " + str(type(v)))
                         raise ImportError()
-                    Loader._initializeArgumentSymbolic(inv, f, v, s)
+                    self._initArgSymbolic(inv, f, v, s)
+        
         for a in argspec.args:
-            if not a in inv.getNames():
-                Loader._initializeArgumentSymbolic(inv, a, 0, SymbolicInteger)
+            if a not in inv.names:
+                self._initArgSymbolic(inv, a, 0, SymbolicInteger)
         return inv
 
     # need these here (rather than inline above) to correctly capture values in lambda
-    def _initializeArgumentConcrete(inv, f, val):
+    @classmethod
+    def _initArgConcrete(cls, inv, f, val):
         inv.addArgumentConstructor(f, val, lambda n, v: val)
 
-    def _initializeArgumentSymbolic(inv, f, val, st):
+    @classmethod
+    def _initArgSymbolic(cls, inv, f, val, st):
+        isinstance(inv, FunctionInvocation), inv
         inv.addArgumentConstructor(f, val, lambda n, v: st(n, v))
 
     def executionComplete(self, return_vals):
@@ -90,9 +103,10 @@ class Loader:
             if (not firstpass and self._filename in sys.modules):
                 del(sys.modules[self._filename])
             self.app = __import__(self._filename)
-            if (not self._entrypoint in self.app.__dict__ or 
-                not callable(self.app.__dict__[self._entrypoint])):
-                print(f"File {self._filename} does not contain a function named {self._entrypoint}")
+            if (not self._entrypoint in self.app.__dict__ or
+                    not callable(self.app.__dict__[self._entrypoint])):
+                print(
+                    f"File {self._filename} does not contain a function named {self._entrypoint}")
                 raise ImportError()
         except Exception as arg:
             print(f"Couldn't import {self._filename}")
@@ -106,7 +120,7 @@ class Loader:
         b_c = Counter(computed)
         b_e = Counter(expected)
         if ((as_bag and b_c != b_e) or
-            (not as_bag and set(computed) != set(expected))):
+                (not as_bag and set(computed) != set(expected))):
             print(f"----> {self.filename} test failed <------")
             print(f"Expected: {b_e}, found: {b_c}")
             return False
@@ -114,14 +128,14 @@ class Loader:
             print(f"{self.filename} test passed <---")
             return True
 
-
-def loaderFactory(filename, entry):
-    assert filename.is_file() and filename.suffix == '.py', filename
-    assert isinstance(entry, str), entry
-    try:
-        sys.path.insert(0, str(filename.parent))
-        ret = Loader(filename, entry)
-        return ret
-    except ImportError:
-        sys.path = sys.path[1:]
-        return None
+    @classmethod
+    def mk(cls, filename, entry):
+        assert filename.is_file() and filename.suffix == '.py', filename
+        assert isinstance(entry, str), entry
+        try:
+            sys.path.insert(0, str(filename.parent))
+            ret = cls(filename, entry)
+            return ret
+        except ImportError:
+            sys.path = sys.path[1:]
+            return None
