@@ -49,7 +49,7 @@ class SymbolicType(metaclass=abc.ABCMeta):
     def _do_sexpr(self, args, fun, op, wrap):
         unwrapped = [(a.unwrap() if isinstance(
             a, SymbolicType) else (a, a)) for a in args]
-        args = zip(inspect.getargspec(fun).args, [c for (c, s) in unwrapped])
+        args = zip(inspect.getfullargspec(fun).args, [c for (c, s) in unwrapped])
         concrete = fun(**dict([a for a in args]))
         symbolic = [op] + [s for c, s in unwrapped]
         return wrap(concrete, symbolic)

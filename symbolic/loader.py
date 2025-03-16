@@ -38,7 +38,7 @@ class Loader:
 
     def createInvocation(self):
         func = self.app.__dict__[self._entrypoint]
-        argspec = inspect.getargspec(func)
+        argspec = inspect.getfullargspec(func)
 
         inv = FunctionInvocation(self._execute, self._resetCallback)
         # check to see if user specified initial values of arguments
