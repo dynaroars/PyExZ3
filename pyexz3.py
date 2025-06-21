@@ -24,15 +24,17 @@ if __name__ == "__main__":
         default=3,
         help="set logger info")
 
-    ag("-s", "--start",
-        dest="entry",
-        default="",
-        help="Specify entry point")
+    # args = aparser.parse_args()
+    # filename = pathlib.Path(args.inp)
+    filename = pathlib.Path("test/simple.py")
+    
+    #parser.add_option("-s", "--start", dest="entry", action="store",
+    #                help="Specify entry point", default="")
+    #parser.add_option("-m", "--max-iters", dest="max_iters", type="int",
+    #                help="Run specified number of iterations", default=0)
 
-    args = aparser.parse_args()
-    filename = pathlib.Path(args.inp)
-    print(f"Args: {args}")
 
+    #settings.LOGGER_LEVEL = helpers.vcommon.getLogLevel(args.log_level)
     settings.LOGGER_LEVEL = helpers.vcommon.getLogLevel(3)
     mlog = helpers.vcommon.getLogger(__name__, settings.LOGGER_LEVEL)
 
@@ -41,7 +43,7 @@ if __name__ == "__main__":
         sys.exit(1)
     filename = filename.resolve()
     # Get the object describing the application
-    app = symbolic.loader.Loader.mk(filename, args.entry)
+    app = symbolic.loader.Loader.mk(filename, "")
     if app is None:
         sys.exit(1)
 
