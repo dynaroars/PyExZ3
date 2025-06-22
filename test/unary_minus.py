@@ -1,4 +1,4 @@
-def FILE(a):
+def unary_minus(a):
     b = -a
     c = -b
 
