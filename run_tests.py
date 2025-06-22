@@ -45,9 +45,9 @@ for f in files:
     # execute the python runner for this test
     full = os.path.join(test_dir, f)
     with open(os.devnull, 'w') as devnull:
-        solver = "--cvc" if options.cvc else "--z3"
+        # solver = "--cvc" if options.cvc else "--z3"
         ret = subprocess.call(
-            [sys.executable, "pyexz3.py", "--m=25", solver, full], stdout=devnull)
+            [sys.executable, "pyexz3.py", "--m=25", full], stdout=devnull)
     if (ret == 0):
         myprint(bcolors.SUCCESS, "✓", "Test " + f + " passed.")
     else:
