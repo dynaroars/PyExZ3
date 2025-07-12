@@ -35,9 +35,15 @@ if __name__ == "__main__":
         help="Run specified number of iterations",
         default=0)
 
+    ag("-a", "--log-assertion",
+        dest="log_assertion",
+        action="store_true",
+        help="Log assert(False) symbolic states")
+
     args = aparser.parse_args()
     filename = pathlib.Path(args.inp)
 
+    settings.LOG_ASSERTION = args.log_assertion
     settings.LOGGER_LEVEL = helpers.vcommon.getLogLevel(3)
     mlog = helpers.vcommon.getLogger(__name__, settings.LOGGER_LEVEL)
 

@@ -1,2 +1,2 @@
-
 LOGGER_LEVEL = 3
+LOG_ASSERTION = False

@@ -1,8 +1,17 @@
 def FILE(a, b):
-    if abs(a) > abs(b):
-        return 0
+    if a > 0:
+        if b < a:
+            x = a + b
+            if x > 20:
+                assert(False)
+        else:
+            y = b - a
+            if y == 0:
+                assert(False)
     else:
-        return 1
-    
+        if b == 0:
+            assert(False)
+    return True
+
 def expected_result():
-    return [0, 1]
+	return [None, None, None, True, True, True]
