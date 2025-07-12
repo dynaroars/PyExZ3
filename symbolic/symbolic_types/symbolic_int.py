@@ -34,9 +34,6 @@ class SymbolicInteger(SymbolicObject, int):
 
     def _op_worker(self, args, fun, op):
         return self._do_sexpr(args, fun, op, SymbolicInteger.wrap)
-    
-    def __neg__(self):
-        return self._op_worker([0, self], lambda x, y: x - y, "-")
 
 # now update the SymbolicInteger class for operations we
 # will build symbolic terms for
