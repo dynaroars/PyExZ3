@@ -7,6 +7,7 @@ import helpers.vcommon as CM
 from .z3_wrap import Z3Wrapper
 from .symbolic_types import symbolic_type, SymbolicType
 from .constraint import Constraint, PathToConstraint
+from helpers.clean_condition import clean_condition
 
 mlog = CM.getLogger(__name__, settings.LOGGER_LEVEL)
 DBG = pdb.set_trace
@@ -141,6 +142,25 @@ class ExplorationEngine:
     def _oneExecution(self, expected_path=None):
         self._recordInputs()
         self.path.reset(expected_path)
-        ret = self.invocation.callFunction(self.symbolic_inputs)
-        print(ret)
+        ret = None # default return value for assert(False)
+        try:
+            ret = self.invocation.callFunction(self.symbolic_inputs)
+        except AssertionError:
+            if not settings.LOG_ASSERTION: raise
+            
+            symbolic_state = []
+            print("\n--Assertion error--")
+            
+            if expected_path:
+                symbolic_state.append(clean_condition(str(expected_path.predicate).rsplit(" ", 1)[0]))
+
+            symbolic_inputs = []
+            for input, value in self.symbolic_inputs.items():
+                symbolic_inputs.append(f"{input} == {value}")
+            symbolic_state.append(" and ".join(symbolic_inputs))
+
+            for i, line in enumerate(symbolic_state):
+                print(f"{i+1}. {line}")
+
+            print()
         self.execution_return_values.append(ret)

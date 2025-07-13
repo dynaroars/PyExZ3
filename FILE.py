@@ -1,23 +1,17 @@
-def FILE(a):
-    b = -a
-    c = -b
-
-    if b < 0:
-        if a > 0 and a == c:
-            return 1
+def FILE(a, b):
+    if a > 0:
+        if b < a:
+            x = a + b
+            if x > 20:
+                assert(False)
         else:
-            return -1
-    elif b > 0:
-        if a < 0 and a == c:
-            return 2
-        else:
-            return -2
+            y = b - a
+            if y == 0:
+                assert(False)
     else:
-        if a == 0 and a == c:
-            return 3
-        else:
-            return -3
-
+        if b == 0:
+            assert(False)
+    return True
 
 def expected_result():
-	return [1, 2, 3]
+	return [None, None, None, True, True, True]
